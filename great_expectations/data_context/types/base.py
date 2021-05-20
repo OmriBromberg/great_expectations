@@ -651,6 +651,8 @@ class DatasourceConfigSchema(Schema):
     credentials = fields.Raw(required=False, allow_none=True)
     introspection = fields.Dict(required=False, allow_none=True)
     tables = fields.Dict(required=False, allow_none=True)
+    pool_size = fields.Integer(required=False, allow_none=True)
+    max_overflow = fields.Integer(required=False, allow_none=True)
     boto3_options = fields.Dict(
         keys=fields.Str(), values=fields.Str(), required=False, allow_none=True
     )
@@ -675,6 +677,8 @@ class DatasourceConfigSchema(Schema):
             or "credentials" in data
             or "introspection" in data
             or "tables" in data
+            or "pool_size" in data
+            or "max_overflow" in data
         ) and not (
             data["class_name"]
             in [

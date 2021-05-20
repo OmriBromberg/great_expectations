@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional
 
 from great_expectations.datasource.data_connector import ConfiguredAssetSqlDataConnector
@@ -193,18 +194,19 @@ class InferredAssetSqlDataConnector(ConfiguredAssetSqlDataConnector):
             self._introspected_assets_cache[data_asset_name] = data_asset_config
 
     def _introspect_db(
-        self,
-        schema_name: str = None,
-        ignore_information_schemas_and_system_tables: bool = True,
-        information_schemas: List[str] = [
-            "INFORMATION_SCHEMA",  # snowflake, mssql, mysql, oracle
-            "information_schema",  # postgres, redshift, mysql
-            "performance_schema",  # mysql
-            "sys",  # mysql
-            "mysql",  # mysql
-        ],
-        system_tables: List[str] = ["sqlite_master"],  # sqlite
-        include_views=True,
+            self,
+            schema_name: str = None,
+            ignore_information_schemas_and_system_tables: bool = True,
+            information_schemas: List[str] = [
+                "INFORMATION_SCHEMA",  # snowflake, mssql, mysql, oracle
+                "information_schema",  # postgres, redshift, mysql
+                "performance_schema",  # mysql
+                "sys",  # mysql
+                "mysql",  # mysql
+            ],
+            system_tables: List[str] = ["sqlite_master"],  # sqlite
+            include_views=True,
+            parallel_schemas=False
     ):
         engine = self._execution_engine.engine
         inspector = sa.inspect(engine)
@@ -212,48 +214,70 @@ class InferredAssetSqlDataConnector(ConfiguredAssetSqlDataConnector):
         selected_schema_name = schema_name
 
         tables = []
-        for schema_name in inspector.get_schema_names():
-            if (
-                ignore_information_schemas_and_system_tables
-                and schema_name in information_schemas
-            ):
+        schemas_names = inspector.get_schema_names()
+        if parallel_schemas:
+            executors = ThreadPoolExecutor(max_workers=len(schemas_names))
+            tables_futures = []
+        for schema_name in schemas_names:
+            if ignore_information_schemas_and_system_tables and schema_name in information_schemas:
                 continue
 
             if selected_schema_name is not None and schema_name != selected_schema_name:
                 continue
 
-            for table_name in inspector.get_table_names(schema=schema_name):
+            if parallel_schemas:
+                introspect_schema_args = (inspector,
+                                          schema_name,
+                                          ignore_information_schemas_and_system_tables,
+                                          system_tables,
+                                          include_views)
+                tables_futures.append(executors.submit(self._introspect_schema, *introspect_schema_args))
+            else:
+                schema_tables = self._introspect_schema(inspector,
+                                                        schema_name,
+                                                        ignore_information_schemas_and_system_tables,
+                                                        system_tables,
+                                                        include_views)
+                tables.extend(schema_tables)
 
-                if (ignore_information_schemas_and_system_tables) and (
-                    table_name in system_tables
-                ):
+        if parallel_schemas:
+            for table_future in as_completed(tables_futures):
+                schema_tables = table_future.result()
+                tables.extend(schema_tables)
+            executors.shutdown(wait=True)
+
+        return tables
+
+    def _introspect_schema(self, inspector, schema_name: str, ignore_information_schemas_and_system_tables: bool,
+                           system_tables: List[str], include_views: bool):
+        tables = []
+        # import ipdb; ipdb.set_trace()
+        table_schema = "" if inspector.engine.dialect.name.lower() == "bigquery" else schema_name
+        for table_name in inspector.get_table_names(schema=schema_name):
+            if ignore_information_schemas_and_system_tables and table_name in system_tables:
+                continue
+
+            tables.append(
+                {
+                    "schema_name": table_schema,
+                    "table_name": table_name,
+                    "type": "table",
+                }
+            )
+
+        # Note Abe 20201112: This logic is currently untested.
+        if include_views:
+            # Note: this is not implemented for bigquery
+            for view_name in inspector.get_view_names(schema=schema_name):
+                if ignore_information_schemas_and_system_tables and view_name in system_tables:
                     continue
 
                 tables.append(
                     {
-                        "schema_name": schema_name,
-                        "table_name": table_name,
-                        "type": "table",
+                        "schema_name": table_schema,
+                        "table_name": view_name,
+                        "type": "view",
                     }
                 )
-
-            # Note Abe 20201112: This logic is currently untested.
-            if include_views:
-                # Note: this is not implemented for bigquery
-
-                for view_name in inspector.get_view_names(schema=schema_name):
-
-                    if (ignore_information_schemas_and_system_tables) and (
-                        table_name in system_tables
-                    ):
-                        continue
-
-                    tables.append(
-                        {
-                            "schema_name": schema_name,
-                            "table_name": view_name,
-                            "type": "view",
-                        }
-                    )
 
         return tables

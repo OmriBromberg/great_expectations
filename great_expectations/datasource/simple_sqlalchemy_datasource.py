@@ -21,6 +21,8 @@ class SimpleSqlalchemyDatasource(BaseDatasource):
         engine=None,  # sqlalchemy.engine.Engine
         introspection: dict = None,
         tables: dict = None,
+        pool_size: int = 5,
+        max_overflow: int = 10
     ):
         introspection = introspection or {}
         tables = tables or {}
@@ -31,6 +33,8 @@ class SimpleSqlalchemyDatasource(BaseDatasource):
             "url": url,
             "credentials": credentials,
             "engine": engine,
+            "pool_size": pool_size,
+            "max_overflow": max_overflow
         }
 
         super().__init__(name=name, execution_engine=self._execution_engine_config)

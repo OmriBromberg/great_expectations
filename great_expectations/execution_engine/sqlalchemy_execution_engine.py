@@ -874,7 +874,7 @@ class SqlAlchemyExecutionEngine(ExecutionEngine):
             # query != None is already checked when RuntimeQueryBatchSpec is instantiated
             query: str = batch_spec.query
 
-            batch_spec.query = "SQLQuery"
+            # batch_spec.query = "SQLQuery"
             batch_data = SqlAlchemyBatchData(
                 execution_engine=self,
                 query=query,

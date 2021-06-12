@@ -12,6 +12,7 @@ from .expect_column_kl_divergence_to_be_less_than import (
 )
 from .expect_column_max_to_be_between import ExpectColumnMaxToBeBetween
 from .expect_column_mean_to_be_between import ExpectColumnMeanToBeBetween
+from .expect_column_var_to_be_between import ExpectColumnVarToBeBetween
 from .expect_column_median_to_be_between import ExpectColumnMedianToBeBetween
 from .expect_column_min_to_be_between import ExpectColumnMinToBeBetween
 from .expect_column_most_common_value_to_be_in_set import (

@@ -2,6 +2,7 @@ from .column_distinct_values import ColumnDistinctValues, ColumnDistinctValuesCo
 from .column_histogram import ColumnHistogram
 from .column_max import ColumnMax
 from .column_mean import ColumnMean
+from .column_variance import ColumnVariance
 from .column_median import ColumnMedian
 from .column_min import ColumnMin
 from .column_most_common_value import ColumnMostCommonValue

@@ -102,6 +102,8 @@ class ValidationResultsPageRenderer(Renderer):
             or {}
         )
 
+        active_batch_definition = validation_results.meta.get("active_batch_definition", {})
+
         # add datasource key to batch_kwargs if missing
         if "datasource" not in batch_kwargs and "datasource" not in batch_kwargs:
             # check if expectation_suite_name follows datasource.batch_kwargs_generator.data_asset_name.suite_name pattern
@@ -110,6 +112,8 @@ class ValidationResultsPageRenderer(Renderer):
                     batch_kwargs["datasource"] = expectation_suite_name.split(".")[0]
                 else:
                     batch_kwargs["datasource"] = expectation_suite_name.split(".")[0]
+            elif (datasource_name := active_batch_definition.get("datasource_name")) is not None:
+                batch_kwargs["datasource"] = datasource_name
 
         # Group EVRs by column
         columns = {}
@@ -173,6 +177,14 @@ class ValidationResultsPageRenderer(Renderer):
                 )
             )
 
+        if validation_results.meta.get("active_batch_definition"):
+            collapse_content_blocks.append(
+                self._render_nested_table_from_dict(
+                    input_dict=validation_results.meta.get("active_batch_definition"),
+                    header="Active Batch Definition",
+                )
+            )
+
         collapse_content_block = CollapseContent(
             **{
                 "collapse_toggle_link": "Show more info...",
@@ -221,7 +233,7 @@ class ValidationResultsPageRenderer(Renderer):
                 )
             ]
 
-        data_asset_name = batch_kwargs.get("data_asset_name")
+        data_asset_name = batch_kwargs.get("data_asset_name") or active_batch_definition.get("data_asset_name")
         # Determine whether we have a custom run_name
         try:
             run_name_as_time = parse(run_name)

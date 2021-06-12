@@ -3,7 +3,7 @@ import textwrap
 
 logger = logging.getLogger(__name__)
 
-from ...core.id_dict import BatchKwargs
+from ...core.id_dict import BatchKwargs, BatchSpec
 from .renderer import Renderer
 
 
@@ -30,15 +30,28 @@ class EmailRenderer(Renderer):
                 data_asset_name = validation_result.meta["batch_kwargs"].get(
                     "data_asset_name", "__no_data_asset_name__"
                 )
+            elif "batch_spec" in validation_result.meta:
+                data_asset_name = validation_result.meta["batch_spec"].get(
+                    "data_asset_name", "__no_data_asset_name__"
+                )
+            elif "active_batch_definition" in validation_result.meta:
+                data_asset_name = validation_result.meta["active_batch_definition"].get(
+                    "data_asset_name", "__no_data_asset_name__"
+                )
             else:
                 data_asset_name = "__no_data_asset_name__"
 
             n_checks_succeeded = validation_result.statistics["successful_expectations"]
             n_checks = validation_result.statistics["evaluated_expectations"]
             run_id = validation_result.meta.get("run_id", "__no_run_id__")
-            batch_id = BatchKwargs(
-                validation_result.meta.get("batch_kwargs", {})
-            ).to_id()
+            if "batch_kwargs" in validation_result.meta:
+                batch_id = BatchKwargs(
+                    validation_result.meta.get("batch_kwargs", {})
+                ).to_id()
+            else:
+                batch_id = BatchSpec(
+                    validation_result.meta.get("batch_spec", {})
+                ).to_id()
             check_details_text = f"<strong>{n_checks_succeeded}</strong> of <strong>{n_checks}</strong> expectations were met"
 
             if validation_result.success:
@@ -91,6 +104,9 @@ class EmailRenderer(Renderer):
                 dataset_reference = validation_result.meta["dataset_reference"]
                 report_element = f"- <strong>Validation data asset</strong>: {dataset_reference}</br>"
                 html += report_element
+            else:
+                if (active_batch_definition := validation_result.meta.get("active_batch_definition")) is not None:
+                    report_element = f"- <strong>BigQuery Table: https://console.cloud.google.com/bigquery?project={1}&ws=&p=ci-7495&d=deal_sourcing&t=deal_sourcing&page=table{1}</br>"
 
         documentation_url = "https://docs.greatexpectations.io/en/latest/guides/tutorials/getting_started/set_up_data_docs.html"
         footer_section = f'<p>Learn <a href="{documentation_url}">here</a> how to review validation results in Data Docs</p>'

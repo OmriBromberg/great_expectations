@@ -4,7 +4,7 @@ from great_expectations.exceptions import InvalidKeyError
 
 logger = logging.getLogger(__name__)
 
-from ...core.id_dict import BatchKwargs
+from ...core.id_dict import BatchKwargs, BatchSpec
 from .renderer import Renderer
 
 
@@ -21,7 +21,7 @@ class SlackRenderer(Renderer):
         default_text = (
             "No validation occurred. Please ensure you passed a validation_result."
         )
-        status = "Failed :x:"
+        status = "Failed :x: <!here>"
 
         title_block = {
             "type": "section",
@@ -46,15 +46,28 @@ class SlackRenderer(Renderer):
                 data_asset_name = validation_result.meta["batch_kwargs"].get(
                     "data_asset_name", "__no_data_asset_name__"
                 )
+            elif "batch_spec" in validation_result.meta:
+                data_asset_name = validation_result.meta["batch_spec"].get(
+                    "data_asset_name", "__no_data_asset_name__"
+                )
+            elif "active_batch_definition" in validation_result.meta:
+                data_asset_name = validation_result.meta["active_batch_definition"].get(
+                    "data_asset_name", "__no_data_asset_name__"
+                )
             else:
                 data_asset_name = "__no_data_asset_name__"
 
             n_checks_succeeded = validation_result.statistics["successful_expectations"]
             n_checks = validation_result.statistics["evaluated_expectations"]
             run_id = validation_result.meta.get("run_id", "__no_run_id__")
-            batch_id = BatchKwargs(
-                validation_result.meta.get("batch_kwargs", {})
-            ).to_id()
+            if "batch_kwargs" in validation_result.meta:
+                batch_id = BatchKwargs(
+                    validation_result.meta.get("batch_kwargs", {})
+                ).to_id()
+            else:
+                batch_id = BatchSpec(
+                    validation_result.meta.get("batch_spec", {})
+                ).to_id()
             check_details_text = (
                 f"*{n_checks_succeeded}* of *{n_checks}* expectations were met"
             )

@@ -814,6 +814,7 @@ class DefaultSiteIndexBuilder:
 
                     batch_kwargs = validation.meta.get("batch_kwargs", {})
                     batch_spec = validation.meta.get("batch_spec", {})
+                    active_batch_definition = validation.meta.get("active_batch_definition", {})
 
                     self.add_resource_info_to_index_links_dict(
                         index_links_dict=index_links_dict,
@@ -824,7 +825,7 @@ class DefaultSiteIndexBuilder:
                         run_time=profiling_result_key.run_id.run_time,
                         run_name=profiling_result_key.run_id.run_name,
                         asset_name=batch_kwargs.get("data_asset_name")
-                        or batch_spec.get("data_asset_name"),
+                        or batch_spec.get("data_asset_name") or active_batch_definition.get("data_asset_name"),
                         batch_kwargs=batch_kwargs,
                         batch_spec=batch_spec,
                     )
@@ -871,6 +872,7 @@ class DefaultSiteIndexBuilder:
                     validation_success = validation.success
                     batch_kwargs = validation.meta.get("batch_kwargs", {})
                     batch_spec = validation.meta.get("batch_spec", {})
+                    active_batch_definition = validation.meta.get("active_batch_definition", {})
 
                     self.add_resource_info_to_index_links_dict(
                         index_links_dict=index_links_dict,
@@ -882,7 +884,7 @@ class DefaultSiteIndexBuilder:
                         run_time=validation_result_key.run_id.run_time,
                         run_name=validation_result_key.run_id.run_name,
                         asset_name=batch_kwargs.get("data_asset_name")
-                        or batch_spec.get("data_asset_name"),
+                        or batch_spec.get("data_asset_name") or active_batch_definition.get("data_asset_name"),
                         batch_kwargs=batch_kwargs,
                         batch_spec=batch_spec,
                     )

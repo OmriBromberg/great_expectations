@@ -25,7 +25,7 @@ class FlowLogicSlackRenderer(SlackRenderer):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Branch*: {self.branch}\n"
+                "text": f"*Branch*: https://github.com/skyline-ai/flowlogic/tree/{self.branch}\n"
                         f"*CI Project*: https://console.cloud.google.com/bigquery?project={self.ci}\n"
                         f"*Circle CI:*: {self.circle_ci_url}\n"
                         f"*Caller*: {self.caller}",

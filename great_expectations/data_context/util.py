@@ -464,7 +464,8 @@ def substitute_all_config_variables(
 
     if isinstance(data, dict) or isinstance(data, OrderedDict):
         return {
-            k: substitute_all_config_variables(v, replace_variables_dict)
+            # k: substitute_all_config_variables(v, replace_variables_dict)
+            substitute_all_config_variables(k, replace_variables_dict): substitute_all_config_variables(v, replace_variables_dict)
             for k, v in data.items()
         }
     elif isinstance(data, list):

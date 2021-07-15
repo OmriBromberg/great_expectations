@@ -251,15 +251,13 @@ class InferredAssetSqlDataConnector(ConfiguredAssetSqlDataConnector):
     def _introspect_schema(self, inspector, schema_name: str, ignore_information_schemas_and_system_tables: bool,
                            system_tables: List[str], include_views: bool):
         tables = []
-        # import ipdb; ipdb.set_trace()
-        table_schema = "" if inspector.engine.dialect.name.lower() == "bigquery" else schema_name
         for table_name in inspector.get_table_names(schema=schema_name):
             if ignore_information_schemas_and_system_tables and table_name in system_tables:
                 continue
 
             tables.append(
                 {
-                    "schema_name": table_schema,
+                    "schema_name": schema_name,
                     "table_name": table_name,
                     "type": "table",
                 }
@@ -274,7 +272,7 @@ class InferredAssetSqlDataConnector(ConfiguredAssetSqlDataConnector):
 
                 tables.append(
                     {
-                        "schema_name": table_schema,
+                        "schema_name": schema_name,
                         "table_name": view_name,
                         "type": "view",
                     }
